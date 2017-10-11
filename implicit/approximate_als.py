@@ -42,6 +42,8 @@ class NMSLibAlternatingLeastSquares(AlternatingLeastSquares):
         The NMSLib method to use
     index_params: dict, optional
         Optional params to send to the createIndex call in NMSLib
+    query_params: dict, optional
+        Optional query time params for the NMSLib 'setQueryTimeParams' call
     approximate_similar_items : bool, optional
         whether or not to build an NMSLIB index for computing similar_items
     approximate_recommend : bool, optional
@@ -60,14 +62,16 @@ class NMSLibAlternatingLeastSquares(AlternatingLeastSquares):
 
     def __init__(self,
                  approximate_similar_items=True, approximate_recommend=True,
-                 method='hnsw', index_params=None, *args, **kwargs):
+                 method='hnsw', index_params=None, query_params=None, *args, **kwargs):
         self.similar_items_index = None
         self.recommend_index = None
 
         self.approximate_similar_items = approximate_similar_items
         self.approximate_recommend = approximate_recommend
         self.method = method
+
         self.index_params = index_params
+        self.query_params = query_params
 
         super(NMSLibAlternatingLeastSquares, self).__init__(*args, **kwargs)
 
@@ -86,6 +90,7 @@ class NMSLibAlternatingLeastSquares(AlternatingLeastSquares):
                 method=self.method, space='cosinesimil')
             self.similar_items_index.addDataPointBatch(self.item_factors)
             self.similar_items_index.createIndex(self.index_params)
+            self.similar_items_index.setQueryTimeParams(self.query_params)
 
         # build up a separate index for the inner product (for recommend
         # methods)
@@ -96,6 +101,7 @@ class NMSLibAlternatingLeastSquares(AlternatingLeastSquares):
                 method='hnsw', space='cosinesimil')
             self.recommend_index.addDataPointBatch(extra)
             self.recommend_index.createIndex(self.index_params)
+            self.recommend_index.setQueryTimeParams(self.query_params)
 
     def similar_items(self, itemid, N=10):
         if not self.approximate_similar_items:
